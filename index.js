@@ -153,10 +153,7 @@ app.get("/forwardMessages", async (req, res) => {
   }
 
   try {
-    await forwarder.forwardMessagesToChannel(
-      sourceChatIds,
-      destinationChannelId
-    );
+    forwarder.forwardMessagesToChannel(sourceChatIds, destinationChannelId);
     res.status(200).send("Messages forwarded successfully.");
   } catch (error) {
     res.status(500).send("Error forwarding messages: " + error.message);
