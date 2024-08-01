@@ -28,6 +28,7 @@ const client = new TelegramClient(
 class TelegramForwarder {
   constructor() {
     this.client = client;
+    this.isForwarding = false; // Biến trạng thái để kiểm soát quá trình forward
   }
 
   async startClient() {
@@ -72,6 +73,12 @@ class TelegramForwarder {
   }
 
   async forwardMessagesToChannel(sourceChatIds, destinationChannelId) {
+    if (this.isForwarding) {
+      console.log("A forwarding process is already running.");
+      return;
+    }
+
+    this.isForwarding = true;
     await this.startClient();
 
     try {
@@ -81,7 +88,7 @@ class TelegramForwarder {
         lastMessageIds[chatId] = messages[0] ? messages[0].id : 0;
       }
 
-      while (true) {
+      const forwardMessages = async () => {
         console.log("Đang lắng nghe tin nhắn...");
         for (let sourceChatId of sourceChatIds) {
           const messages = await this.client.getMessages(sourceChatId, {
@@ -120,11 +127,22 @@ class TelegramForwarder {
           }
         }
 
-        await new Promise((resolve) => setTimeout(resolve, 10000)); // delay 10 seconds
-      }
-    } finally {
-      await this.client.disconnect();
+        // Đặt thời gian trễ trước khi tiếp tục lắng nghe tin nhắn
+        if (this.isForwarding) {
+          setTimeout(forwardMessages, 10000); // delay 10 seconds
+        }
+      };
+
+      forwardMessages();
+    } catch (error) {
+      console.log(error);
+      throw error;
     }
+  }
+
+  stopForwarding() {
+    this.isForwarding = false;
+    console.log("Forwarding process stopped.");
   }
 }
 
@@ -134,7 +152,7 @@ app.use(bodyParser.json());
 
 const forwarder = new TelegramForwarder();
 
-app.post("/listChats", async (req, res) => {
+app.post("/list", async (req, res) => {
   try {
     await forwarder.listChats();
     res.status(200).send("List of chats retrieved successfully.");
@@ -143,7 +161,7 @@ app.post("/listChats", async (req, res) => {
   }
 });
 
-app.get("/forwardMessages", async (req, res) => {
+app.get("/start", async (req, res) => {
   const sourceChatIds = [
     -1001181718749, -1001141644598, -1001325499115, -1002186521209,
   ];
@@ -154,10 +172,15 @@ app.get("/forwardMessages", async (req, res) => {
 
   try {
     forwarder.forwardMessagesToChannel(sourceChatIds, destinationChannelId);
-    res.status(200).send("Messages forwarded successfully.");
+    res.status(200).send("Messages forwarding started successfully.");
   } catch (error) {
     res.status(500).send("Error forwarding messages: " + error.message);
   }
+});
+
+app.get("/stopForwarding", (req, res) => {
+  forwarder.stopForwarding();
+  res.status(200).send("Forwarding process stopped successfully.");
 });
 
 // Lắng nghe cổng 3000
