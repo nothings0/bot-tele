@@ -163,7 +163,7 @@ app.post("/list", async (req, res) => {
 
 app.get("/start", async (req, res) => {
   const sourceChatIds = [
-    -1001181718749, -1001141644598, -1001325499115, -1002186521209,
+    -1001656182710, -1002186521209,
   ];
   const destinationChannelId = -1002181061675;
   if (!sourceChatIds || !destinationChannelId) {
