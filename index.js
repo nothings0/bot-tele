@@ -178,7 +178,7 @@ app.get("/start", async (req, res) => {
   }
 });
 
-app.get("/stopForwarding", (req, res) => {
+app.get("/stop", (req, res) => {
   forwarder.stopForwarding();
   res.status(200).send("Forwarding process stopped successfully.");
 });
